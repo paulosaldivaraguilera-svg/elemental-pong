@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elemental Pong - Prototype</title>
+    <title>ELEMENTAL PONG - Prototype v2.0</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            background: #0a0a0a; 
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%); 
             display: flex; 
             justify-content: center; 
             align-items: center; 
             min-height: 100vh;
-            font-family: 'Courier New', monospace;
+            font-family: 'Orbitron', 'Courier New', monospace;
             overflow: hidden;
         }
         #gameContainer {
@@ -20,86 +20,224 @@
         }
         canvas { 
             background: #000;
-            border: 2px solid #333;
+            border: 3px solid #333;
+            border-radius: 8px;
             display: block;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.2);
         }
         #ui {
             position: absolute;
-            top: 10px;
+            top: 15px;
             left: 0;
             right: 0;
             display: flex;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 25px;
             color: #fff;
-            font-size: 14px;
+            font-size: 18px;
+            font-weight: bold;
         }
+        .score { font-size: 28px; text-shadow: 0 0 10px currentColor; }
+        #scorePlayer { color: #00f3ff; }
+        #scoreEnemy { color: #ff0055; }
+        
+        #levelDisplay {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffcc00;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
         #elementUI {
             position: absolute;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
         .element-icon {
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            opacity: 0.3;
+            font-size: 18px;
+            opacity: 0.2;
             transition: all 0.3s;
+            border: 2px solid transparent;
         }
-        .element-icon.active { opacity: 1; transform: scale(1.2); }
+        .element-icon.active { 
+            opacity: 1; 
+            transform: scale(1.15);
+            border-color: #fff;
+            box-shadow: 0 0 15px currentColor;
+        }
+        
         #chronoBar {
             position: absolute;
-            top: 40px;
+            top: 75px;
             left: 50%;
             transform: translateX(-50%);
-            width: 200px;
-            height: 8px;
-            background: #333;
-            border-radius: 4px;
+            width: 180px;
+            height: 6px;
+            background: #222;
+            border-radius: 3px;
             overflow: hidden;
         }
         #chronoFill {
             height: 100%;
             width: 0%;
             background: linear-gradient(90deg, #bc13fe, #00f3ff);
-            transition: width 0.1s;
+            transition: width 0.15s;
         }
-        #controls {
+        #chronoLabel {
             position: absolute;
-            bottom: -40px;
+            top: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #bc13fe;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        #menu, #gameOver {
+            position: absolute;
+            top: 0;
             left: 0;
             right: 0;
-            text-align: center;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        #gameOver { display: none; }
+        
+        .title {
+            font-size: 32px;
+            color: #00f3ff;
+            text-shadow: 0 0 20px #00f3ff;
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+        }
+        .subtitle {
+            color: #ff0055;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        .menu-btn {
+            background: transparent;
+            border: 2px solid #00f3ff;
+            color: #00f3ff;
+            padding: 12px 40px;
+            font-size: 16px;
+            font-family: inherit;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.3s;
+            border-radius: 4px;
+        }
+        .menu-btn:hover {
+            background: #00f3ff;
+            color: #000;
+            box-shadow: 0 0 20px #00f3ff;
+        }
+        .high-score {
+            color: #ffcc00;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .controls-info {
             color: #666;
+            font-size: 11px;
+            margin-top: 30px;
+            text-align: center;
+            line-height: 1.8;
+        }
+        
+        #waveNotification {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffcc00;
+            font-size: 24px;
+            text-shadow: 0 0 20px #ffcc00;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+        
+        #streakDisplay {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ff9d;
             font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="game" width="400" height="600"></canvas>
+        
         <div id="ui">
-            <span id="scorePlayer">0</span>
-            <span id="elementName">-</span>
-            <span id="scoreEnemy">0</span>
+            <span class="score" id="scorePlayer">0</span>
+            <span id="elementName"></span>
+            <span class="score" id="scoreEnemy">0</span>
         </div>
+        
+        <div id="levelDisplay">WAVE 1</div>
+        
         <div id="chronoBar"><div id="chronoFill"></div></div>
+        <div id="chronoLabel">CHRONO</div>
+        
         <div id="elementUI">
-            <div class="element-icon" id="el-fire" style="background:#ff0055">🔥</div>
-            <div class="element-icon" id="el-ice" style="background:#00f3ff">❄️</div>
-            <div class="element-icon" id="el-thunder" style="background:#ffcc00">⚡</div>
-            <div class="element-icon" id="el-earth" style="background:#8B4513">🪨</div>
-            <div class="element-icon" id="el-air" style="background:#A9F5F2">💨</div>
-            <div class="element-icon" id="el-water" style="background:#2980B9">💧</div>
+            <div class="element-icon" id="el-fire" style="background:#ff0055;box-shadow:0 0 10px #ff0055">🔥</div>
+            <div class="element-icon" id="el-ice" style="background:#00f3ff;box-shadow:0 0 10px #00f3ff">❄️</div>
+            <div class="element-icon" id="el-thunder" style="background:#ffcc00;box-shadow:0 0 10px #ffcc00">⚡</div>
+            <div class="element-icon" id="el-earth" style="background:#8B4513;box-shadow:0 0 10px #8B4513">🪨</div>
+            <div class="element-icon" id="el-air" style="background:#A9F5F2;box-shadow:0 0 10px #A9F5F2">💨</div>
+            <div class="element-icon" id="el-water" style="background:#2980B9;box-shadow:0 0 10px #2980B9">💧</div>
         </div>
-        <div id="controls">← → Mover | ESPACIO: Cargar/Usar | C: Chrono</div>
+        
+        <div id="waveNotification"></div>
+        <div id="streakDisplay">PERFECT STREAK: x1</div>
+        
+        <!-- MENÚ -->
+        <div id="menu">
+            <div class="title">ELEMENTAL</div>
+            <div class="subtitle">CHRONO PONG</div>
+            <button class="menu-btn" onclick="startGame()">JUGAR</button>
+            <div class="high-score" id="highScore">RÉCORD: 0</div>
+            <div class="controls-info">
+                ← → Mover paleta<br>
+                ESPACIO Cargar poder<br>
+                C Activar CHRONO-BREAK
+            </div>
+        </div>
+        
+        <!-- GAME OVER -->
+        <div id="gameOver">
+            <div class="title" style="color:#ff0055">GAME OVER</div>
+            <div class="subtitle" id="finalScore">Puntuación: 0</div>
+            <div class="high-score" id="newHighScore" style="color:#00ff9d;display:none">¡NUEVO RÉCORD!</div>
+            <button class="menu-btn" onclick="startGame()">REINTENTAR</button>
+            <button class="menu-btn" onclick="showMenu()">MENÚ</button>
+        </div>
     </div>
 
     <script>
@@ -108,15 +246,22 @@
         
         // Game State
         const state = {
-            player: { x: 170, y: 550, width: 60, height: 10, score: 0 },
-            enemy: { x: 170, y: 40, width: 60, height: 10, speed: 4 },
-            ball: { x: 200, y: 300, vx: 0, vy: 0, radius: 8, speed: 5 },
+            screen: 'menu', // menu, playing, gameover
+            player: { x: 170, y: 540, width: 70, height: 12, speed: 7 },
+            enemy: { x: 170, y: 48, width: 70, height: 12, speed: 3, baseSpeed: 3 },
+            ball: { x: 200, y: 300, vx: 0, vy: 0, radius: 10, speed: 5, maxSpeed: 12 },
+            score: { player: 0, enemy: 0 },
+            highScore: parseInt(localStorage.getItem('elementalPongHighScore') || '0'),
             elements: ['fire', 'ice', 'thunder', 'earth', 'air', 'water'],
             currentElement: null,
             charge: 0,
             chrono: 0,
             timeScale: 1,
-            keys: {}
+            level: 1,
+            streak: 0,
+            particles: [],
+            keys: {},
+            shake: 0
         };
         
         const elementColors = {
@@ -126,17 +271,57 @@
         
         // Initialize
         function init() {
-            resetBall();
-            document.addEventListener('keydown', e => state.keys[e.key] = true);
-            document.addEventListener('keyup', e => state.keys[e.key] = false);
+            document.getElementById('highScore').textContent = `RÉCORD: ${state.highScore}`;
+            
+            document.addEventListener('keydown', e => {
+                state.keys[e.key] = true;
+                state.keys[e.code] = true;
+            });
+            document.addEventListener('keyup', e => {
+                state.keys[e.key] = false;
+                state.keys[e.code] = false;
+            });
+            
             requestAnimationFrame(gameLoop);
+        }
+        
+        function startGame() {
+            state.screen = 'playing';
+            state.score = { player: 0, enemy: 0 };
+            state.level = 1;
+            state.streak = 0;
+            state.charge = 0;
+            state.chrono = 0;
+            state.currentElement = null;
+            state.enemy.baseSpeed = 3;
+            state.enemy.speed = 3;
+            resetBall();
+            
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            updateUI();
+            showWaveNotification();
+        }
+        
+        function showMenu() {
+            state.screen = 'menu';
+            document.getElementById('menu').style.display = 'flex';
+            document.getElementById('gameOver').style.display = 'none';
+        }
+        
+        function showWaveNotification() {
+            const notif = document.getElementById('waveNotification');
+            notif.textContent = `WAVE ${state.level}`;
+            notif.style.opacity = '1';
+            setTimeout(() => notif.style.opacity = '0', 1500);
         }
         
         function resetBall() {
             state.ball.x = 200;
             state.ball.y = 300;
-            state.ball.vx = (Math.random() - 0.5) * 4;
+            state.ball.vx = (Math.random() - 0.5) * 3;
             state.ball.vy = Math.random() > 0.5 ? 3 : -3;
+            state.ball.speed = Math.min(5 + (state.level * 0.5), state.ball.maxSpeed);
             state.currentElement = null;
             updateElementUI();
         }
@@ -145,13 +330,11 @@
             document.querySelectorAll('.element-icon').forEach(el => el.classList.remove('active'));
             if (state.currentElement) {
                 const icon = document.getElementById(`el-${state.currentElement}`);
-                if (icon) {
-                    icon.classList.add('active');
-                    document.getElementById('elementName').textContent = state.currentElement.toUpperCase();
-                    document.getElementById('elementName').style.color = elementColors[state.currentElement];
-                }
+                if (icon) icon.classList.add('active');
+                document.getElementById('elementName').textContent = state.currentElement.toUpperCase();
+                document.getElementById('elementName').style.color = elementColors[state.currentElement];
             } else {
-                document.getElementById('elementName').textContent = '-';
+                document.getElementById('elementName').textContent = '';
             }
         }
         
@@ -159,52 +342,101 @@
             const ball = state.ball;
             switch(element) {
                 case 'fire':
-                    ball.speed *= 1.8;
+                    ball.speed *= 2;
+                    createParticles(ball.x, ball.y, elementColors.fire, 20);
                     break;
                 case 'ice':
-                    // Reduce friction on paddle (handled in paddle collision)
+                    // Slow effect on enemy paddle
                     break;
                 case 'thunder':
-                    ball.vx += (Math.random() - 0.5) * 8;
+                    ball.vx += (Math.random() - 0.5) * 10;
+                    createParticles(ball.x, ball.y, elementColors.thunder, 15);
                     break;
                 case 'earth':
-                    // Heavy effect pushes paddle
+                    ball.speed *= 0.7;
+                    createParticles(ball.x, ball.y, elementColors.earth, 15);
                     break;
                 case 'air':
-                    // Curve effect (implemented in movement)
+                    // Curve handled in update
                     break;
                 case 'water':
-                    // Erratic bounce
+                    ball.vx *= 1.5;
                     break;
             }
         }
         
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                state.particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 1,
+                    color,
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+        
+        function updateParticles() {
+            state.particles = state.particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.03;
+                p.vx *= 0.95;
+                p.vy *= 0.95;
+                return p.life > 0;
+            });
+        }
+        
+        function drawParticles() {
+            state.particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 0;
+        }
+        
         function update() {
+            if (state.screen !== 'playing') return;
+            
             const dt = 0.016 * state.timeScale;
             
+            // Screen shake decay
+            if (state.shake > 0) state.shake *= 0.9;
+            
             // Player Movement
-            if (state.keys['ArrowLeft'] || state.keys['a']) state.player.x -= 8;
-            if (state.keys['ArrowRight'] || state.keys['d']) state.player.x += 8;
-            state.player.x = Math.max(0, Math.min(340, state.player.x));
+            let moveX = 0;
+            if (state.keys['ArrowLeft'] || state.keys['KeyA']) moveX -= 1;
+            if (state.keys['ArrowRight'] || state.keys['KeyD']) moveX += 1;
+            state.player.x += moveX * state.player.speed;
+            state.player.x = Math.max(0, Math.min(330, state.player.x));
             
             // Charge Element
-            if (state.keys[' '] && !state.keys['charged']) {
+            if ((state.keys[' '] || state.keys['Space']) && !state.keys['charged']) {
                 state.keys['charged'] = true;
                 if (!state.currentElement && state.charge < 100) {
-                    state.charge += 2;
+                    state.charge += 1.5;
                 }
                 if (state.charge >= 100 && !state.currentElement) {
-                    state.currentElement = state.elements[Math.floor(Math.random() * 6)];
+                    state.currentElement = state.elements[Math.floor(Math.random() * state.elements.length)];
                     applyElementEffect(state.currentElement);
                     state.charge = 0;
                 }
             }
-            if (!state.keys[' ']) state.keys['charged'] = false;
+            if (!state.keys[' '] && !state.keys['Space']) state.keys['charged'] = false;
             
             // Chrono Break
-            if (state.keys['c'] && state.chrono >= 100) {
+            if ((state.keys['c'] || state.keys['KeyC']) && state.chrono >= 100) {
                 state.chrono = 0;
                 state.timeScale = 0.1;
+                createParticles(state.ball.x, state.ball.y, '#bc13fe', 30);
                 setTimeout(() => state.timeScale = 1, 2000);
             }
             
@@ -216,18 +448,22 @@
             
             // Air Curve Effect
             if (state.currentElement === 'air') {
-                state.ball.vx += Math.sin(Date.now() / 100) * 0.1;
+                state.ball.vx += Math.sin(Date.now() / 80) * 0.15;
             }
             
             // Water Erratic Bounce
             if (state.currentElement === 'water' && (state.ball.x <= 0 || state.ball.x >= 400)) {
-                state.ball.vy *= -1.2;
+                state.ball.vy *= -1.3;
+                createParticles(state.ball.x, state.ball.y, elementColors.water, 10);
             }
             
             // Wall Collision
-            if (state.ball.x <= 0 || state.ball.x >= 400) state.ball.vx *= -1;
+            if (state.ball.x - state.ball.radius <= 0 || state.ball.x + state.ball.radius >= 400) {
+                state.ball.vx *= -1;
+                state.ball.x = Math.max(state.ball.radius, Math.min(400 - state.ball.radius, state.ball.x));
+            }
             
-            // Paddle Collision
+            // Paddle Collision - Player
             if (state.ball.y + state.ball.radius >= state.player.y &&
                 state.ball.y - state.ball.radius <= state.player.y + state.player.height &&
                 state.ball.x >= state.player.x && state.ball.x <= state.player.x + state.player.width) {
@@ -235,103 +471,192 @@
                 state.ball.vy = -Math.abs(state.ball.vy);
                 state.ball.y = state.player.y - state.ball.radius;
                 
-                // Hit position affects angle
                 const hitPos = (state.ball.x - state.player.x) / state.player.width - 0.5;
-                state.ball.vx += hitPos * 5;
+                state.ball.vx += hitPos * 6;
                 
                 // Perfect Parry bonus
-                if (Math.abs(hitPos) < 0.1) {
-                    state.chrono = Math.min(100, state.chrono + 25);
+                if (Math.abs(hitPos) < 0.15) {
+                    state.chrono = Math.min(100, state.chrono + 20);
+                    state.streak++;
+                    updateStreak();
+                    createParticles(state.ball.x, state.ball.y, '#00ff9d', 15);
+                } else {
+                    state.streak = 0;
+                    document.getElementById('streakDisplay').style.opacity = '0';
                 }
             }
             
-            // Enemy Collision
+            // Paddle Collision - Enemy
             if (state.ball.y - state.ball.radius <= state.enemy.y + state.enemy.height &&
                 state.ball.y + state.ball.radius >= state.enemy.y &&
                 state.ball.x >= state.enemy.x && state.ball.x <= state.enemy.x + state.enemy.width) {
                 
                 state.ball.vy = Math.abs(state.ball.vy);
                 state.ball.y = state.enemy.y + state.enemy.height + state.ball.radius;
+                state.streak = 0;
             }
             
-            // Enemy AI
+            // Enemy AI (improved)
             const targetX = state.ball.x - state.enemy.width / 2;
-            state.enemy.x += (targetX - state.enemy.x) * 0.08;
-            state.enemy.x = Math.max(0, Math.min(340, state.enemy.x));
+            const reactionSpeed = state.enemy.speed + (state.level * 0.3);
+            state.enemy.x += (targetX - state.enemy.x) * Math.min(0.1, reactionSpeed * 0.01);
+            state.enemy.x = Math.max(0, Math.min(330, state.enemy.x));
             
             // Scoring
-            if (state.ball.y > 600) {
-                state.enemy.score++;
-                document.getElementById('scoreEnemy').textContent = state.enemy.score;
-                resetBall();
+            if (state.ball.y > 620) {
+                state.score.enemy++;
+                state.streak = 0;
+                state.charge = Math.max(0, state.charge - 20);
+                state.shake = 10;
+                checkLevel();
+                updateUI();
+                
+                if (state.score.enemy >= 5) {
+                    gameOver();
+                } else {
+                    resetBall();
+                }
             }
-            if (state.ball.y < 0) {
-                state.player.score++;
-                document.getElementById('scorePlayer').textContent = state.player.score;
+            if (state.ball.y < -20) {
+                state.score.player++;
+                state.streak = 0;
+                checkLevel();
+                updateUI();
+                
+                if (state.score.player >= 10) {
+                    state.score.player = 0;
+                    state.score.enemy = 0;
+                    state.level++;
+                    showWaveNotification();
+                    state.enemy.speed = state.enemy.baseSpeed + (state.level * 0.5);
+                }
                 resetBall();
             }
             
-            // Update UI
+            updateParticles();
+        }
+        
+        function checkLevel() {
+            if (state.score.player > 0 && state.score.player % 5 === 0) {
+                state.level++;
+                showWaveNotification();
+                state.enemy.speed = state.enemy.baseSpeed + (state.level * 0.5);
+            }
+        }
+        
+        function updateStreak() {
+            const streakEl = document.getElementById('streakDisplay');
+            if (state.streak > 1) {
+                streakEl.textContent = `PERFECT STREAK: x${state.streak}`;
+                streakEl.style.opacity = '1';
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('scorePlayer').textContent = state.score.player;
+            document.getElementById('scoreEnemy').textContent = state.score.enemy;
+            document.getElementById('levelDisplay').textContent = `WAVE ${state.level}`;
             document.getElementById('chronoFill').style.width = state.chrono + '%';
         }
         
+        function gameOver() {
+            state.screen = 'gameover';
+            const totalScore = state.score.player + (state.level * 10);
+            
+            document.getElementById('finalScore').textContent = `Puntuación: ${totalScore}`;
+            
+            if (totalScore > state.highScore) {
+                state.highScore = totalScore;
+                localStorage.setItem('elementalPongHighScore', state.highScore);
+                document.getElementById('highScore').textContent = `RÉCORD: ${state.highScore}`;
+                document.getElementById('newHighScore').style.display = 'block';
+            } else {
+                document.getElementById('newHighScore').style.display = 'none';
+            }
+            
+            document.getElementById('gameOver').style.display = 'flex';
+        }
+        
         function draw() {
-            ctx.fillStyle = '#000';
+            // Clear with shake
+            ctx.save();
+            if (state.shake > 0.5) {
+                ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
+            }
+            
+            ctx.fillStyle = '#0a0a0a';
             ctx.fillRect(0, 0, 400, 600);
             
             // Center Line
             ctx.strokeStyle = '#333';
-            ctx.setLineDash([10, 10]);
+            ctx.setLineDash([15, 15]);
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, 300);
             ctx.lineTo(400, 300);
             ctx.stroke();
             ctx.setLineDash([]);
             
-            // Elements Trail
-            if (state.currentElement) {
-                ctx.fillStyle = elementColors[state.currentElement] + '40';
+            // Grid effect
+            ctx.strokeStyle = '#111';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 400; i += 40) {
                 ctx.beginPath();
-                ctx.arc(state.ball.x, state.ball.y, state.ball.radius + 5, 0, Math.PI * 2);
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 600);
+                ctx.stroke();
+            }
+            for (let i = 0; i < 600; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(400, i);
+                ctx.stroke();
+            }
+            
+            // Particles
+            drawParticles();
+            
+            // Trail effect
+            if (state.currentElement) {
+                ctx.fillStyle = elementColors[state.currentElement] + '30';
+                ctx.beginPath();
+                ctx.arc(state.ball.x, state.ball.y, state.ball.radius + 8, 0, Math.PI * 2);
                 ctx.fill();
             }
             
             // Ball
             ctx.fillStyle = state.currentElement ? elementColors[state.currentElement] : '#fff';
             ctx.shadowColor = state.currentElement ? elementColors[state.currentElement] : '#fff';
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 20;
             ctx.beginPath();
             ctx.arc(state.ball.x, state.ball.y, state.ball.radius, 0, Math.PI * 2);
             ctx.fill();
             ctx.shadowBlur = 0;
             
-            // Player
+            // Player Paddle
             ctx.fillStyle = '#00f3ff';
             ctx.shadowColor = '#00f3ff';
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 15;
             ctx.fillRect(state.player.x, state.player.y, state.player.width, state.player.height);
             ctx.shadowBlur = 0;
             
-            // Enemy
+            // Enemy Paddle
             ctx.fillStyle = '#ff0055';
             ctx.shadowColor = '#ff0055';
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 15;
             ctx.fillRect(state.enemy.x, state.enemy.y, state.enemy.width, state.enemy.height);
             ctx.shadowBlur = 0;
             
             // Charge Bar
-            if (state.charge > 0 && !state.currentElement) {
+            if (state.charge > 0 && !state.currentElement && state.screen === 'playing') {
                 ctx.fillStyle = '#333';
-                ctx.fillRect(state.player.x, state.player.y - 15, state.player.width, 5);
-                ctx.fillStyle = elementColors[state.elements[Math.floor(Math.random() * 6)]];
-                ctx.fillRect(state.player.x, state.player.y - 15, state.player.width * (state.charge / 100), 5);
+                ctx.fillRect(state.player.x, state.player.y - 12, state.player.width, 4);
+                const randomElement = state.elements[Math.floor(Math.random() * 6)];
+                ctx.fillStyle = elementColors[randomElement];
+                ctx.fillRect(state.player.x, state.player.y - 12, state.player.width * (state.charge / 100), 4);
             }
             
-            // Time Effect
-            if (state.timeScale < 1) {
-                ctx.fillStyle = 'rgba(188, 19, 254, 0.1)';
-                ctx.fillRect(0, 0, 400, 600);
-            }
+            ctx.restore();
         }
         
         function gameLoop() {
